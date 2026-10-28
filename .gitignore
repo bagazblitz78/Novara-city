@@ -1,0 +1,59 @@
+# ---- Dependencies ----
+node_modules/
+.pnp
+.pnp.js
+
+# ---- Next.js / build output ----
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# ---- Environment & secrets (NEVER commit) ----
+.env
+.env.*
+!.env.example
+
+# ---- Database ----
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+prisma/dev.db*
+prisma/*.db
+
+# ---- Logs ----
+logs/
+*.log
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+pino-*.log
+
+# ---- Test & coverage artifacts ----
+coverage/
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+playwright/.cache/
+
+# ---- User uploads (runtime data) ----
+uploads/*
+!uploads/.gitkeep
+
+# ---- Editor / OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ---- Deploy / platform ----
+.vercel
+.netlify
+*.pid
+*.seed
