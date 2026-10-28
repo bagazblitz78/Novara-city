@@ -1,0 +1,17 @@
+# Normalise line endings: LF in the repository regardless of platform.
+* text=auto
+
+# Binary assets — never line-converted.
+*.woff2 binary
+*.woff binary
+*.ttf binary
+*.otf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+
+# Vendored licence texts are kept byte-for-byte verbatim as the licence requires,
+# so their original formatting is excluded from whitespace checks.
+src/fonts/OFL-*.txt -whitespace

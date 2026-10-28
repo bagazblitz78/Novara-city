@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Novara City">
+  <rect width="64" height="64" rx="14" fill="#d2481f" />
+  <path
+    d="M18 46V18h8l12 16V18h8v28h-8L26 30v16z"
+    fill="#fff"
+  />
+  <path d="M18 50h28v3H18z" fill="#fff" opacity=".55" />
+</svg>

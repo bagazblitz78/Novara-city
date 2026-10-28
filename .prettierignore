@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+build/
+coverage/
+package-lock.json
+*.woff2
+*.woff
+*.ttf
+*.png
+*.jpg
+*.ico
+CHANGELOG.md
