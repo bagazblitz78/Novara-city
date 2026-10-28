@@ -11,6 +11,9 @@ dist/
 *.tsbuildinfo
 next-env.d.ts
 
+# ---- Generated Prisma client ----
+src/generated/
+
 # ---- Environment & secrets (NEVER commit) ----
 .env
 .env.*

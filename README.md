@@ -42,9 +42,10 @@ the virtual economy.
 
 - **Next.js** (App Router) + **TypeScript** — modular monolith
 - **Tailwind CSS** with design tokens; accessible headless primitives as features need them
-- **Prisma** ORM — **SQLite** for local development, **PostgreSQL** in production
+- **Prisma 7** ORM with driver adapters — **SQLite** locally, **PostgreSQL** in production
 - **Zod** validation, custom session authentication (Argon2id)
-- Linting and formatting enforced locally and in CI; automated tests arrive with the backend milestone
+- **Vitest** unit + integration tests against a real database
+- GitHub Actions CI: format, lint, typecheck, tests on **both** engines, production build
 
 ## Getting started
 
@@ -55,6 +56,7 @@ git clone https://github.com/bagazblitz78/Novara-city.git
 cd Novara-city
 cp .env.example .env      # Windows: copy .env.example .env
 npm install
+npm run db:setup          # generate client + create schema + seed districts
 npm run dev               # http://localhost:3000
 ```
 
@@ -78,26 +80,38 @@ Copy `.env.example` to `.env`. Never commit `.env` — it is gitignored.
 src/
   app/        Routes (public, auth, app, admin) and API route handlers
   components/ ui primitives, layout, feature components
-  lib/        shared helpers (validation, formatting, reference data)
+  lib/        db, env, logger, errors, shared helpers
   fonts/      self-hosted OFL fonts with their licences
   styles/     design tokens and global styles
+prisma/       schema.prisma (SQLite), schema.postgres.prisma (production twin), seed
+scripts/      cross-platform dev/test helpers
+tests/        unit + integration suites (real database)
 ```
 
-`server/` (business logic), `prisma/` (schema), `tests/` and `docs/` are created together
-with their milestones.
+`server/` (business logic) and `docs/` are created together with their milestones.
 
 ## Development
 
 ```bash
+npm run dev             # local dev server
+npm run build           # production build
 npm run lint            # ESLint
 npm run format          # Prettier write
 npm run format:check    # Prettier check
 npm run typecheck       # tsc --noEmit
-npm run build           # production build
-npm run dev             # local dev server
+npm test                # unit + integration tests
+npm run db:setup        # generate client + create schema + seed
+npm run db:push         # apply schema to the configured database
+npm run db:seed         # seed reference data (idempotent)
+npm run db:studio       # browse the database
 ```
 
-Automated tests (`npm test`) are added with the backend milestone.
+`npm test` provisions its own database: SQLite (`./test.db`) when `DATABASE_URL` is
+unset, or PostgreSQL when it is set — the same suite runs on both engines in CI.
+
+> npm asks for explicit approval before running dependency install scripts. This project
+> allows exactly five, pinned in `package.json` under `allowScripts` (`better-sqlite3`,
+> `prisma`, `@prisma/engines`, `esbuild`, `unrs-resolver`). Review them before upgrading.
 
 ## Security
 

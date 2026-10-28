@@ -1,0 +1,188 @@
+// =============================================================================
+// Novara City — database schema (production target: PostgreSQL)
+//
+// Portability rules, because production runs PostgreSQL:
+//   • no Prisma `enum`  → String columns validated with Zod at the edge
+//   • no `Json` columns → JSON is serialised into String (audit metadata)
+//   • no arrays / citext → usernames are lowercase-only, enforced on input
+//   • cuid() ids and DateTime columns only, which behave identically on both
+//
+// KEEP prisma/schema.prisma byte-identical except for `provider`.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model District {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  tagline     String
+  description String
+  color       String
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  residents User[]
+
+  @@map("districts")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  email        String    @unique
+  passwordHash String
+  displayName  String
+  bio          String    @default("")
+  avatarUrl    String?
+  role         String    @default("resident")
+  status       String    @default("active")
+  districtId   String
+  houseNumber  Int
+  street       String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+
+  district     District     @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  sessions     Session[]
+  posts        Post[]
+  comments     Comment[]
+  announcements Announcement[]
+  reportsFiled Report[]     @relation("ReportReporter")
+  reportsHandled Report[]   @relation("ReportHandler")
+  auditLogs    AuditLog[]
+
+  @@index([districtId])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Session {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  issuedAt   DateTime  @default(now())
+  expiresAt  DateTime
+  lastSeenAt DateTime  @default(now())
+  ip         String?
+  userAgent  String?
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Post {
+  id        String    @id @default(cuid())
+  authorId  String
+  body      String
+  status    String    @default("visible")
+  createdAt DateTime  @default(now())
+  editedAt  DateTime?
+
+  author   User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  // Moderation reports reference posts polymorphically (targetType/targetId),
+  // so they intentionally have no relation field here.
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  postId    String
+  authorId  String
+  body      String
+  status    String    @default("visible")
+  createdAt DateTime  @default(now())
+  editedAt  DateTime?
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  authorId    String
+  title       String
+  body        String
+  pinned      Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([pinned])
+  @@index([publishedAt])
+  @@map("announcements")
+}
+
+/// Moderation report. `targetType` + `targetId` are polymorphic
+/// (post | comment | user), so referential integrity is enforced in the
+/// service layer rather than by a foreign key.
+model Report {
+  id          String    @id @default(cuid())
+  reporterId  String
+  targetType  String
+  targetId    String
+  reason      String
+  details     String?
+  status      String    @default("open")
+  handledById String?
+  handledAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  reporter User  @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  handler  User? @relation("ReportHandler", fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([targetType, targetId])
+  @@map("reports")
+}
+
+/// Every moderator/admin action. `metadata` holds JSON as a String
+/// (Prisma `Json` is not supported on SQLite).
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   String?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// Database-backed rate limiting, so counters stay correct across instances.
+model RateLimit {
+  key         String   @id
+  windowStart DateTime
+  count       Int      @default(0)
+  expiresAt   DateTime
+
+  @@index([expiresAt])
+  @@map("rate_limits")
+}
