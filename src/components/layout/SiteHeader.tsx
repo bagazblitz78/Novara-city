@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ButtonLink, buttonClasses } from '@/components/ui/Button';
 import { Logo } from '@/components/layout/Logo';
+import { useAuth } from '@/components/auth/AuthContext';
 
 const NAV = [
   { href: '/#how', label: 'How it works' },
@@ -34,6 +36,15 @@ function MenuIcon() {
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const { user, loading, signOut } = useAuth();
+  const router = useRouter();
+
+  async function handleSignOut() {
+    await signOut();
+    setOpen(false);
+    router.push('/');
+    router.refresh();
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface">
@@ -55,15 +66,37 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Link
-            href="/login"
-            className="rounded-md px-3.5 py-2 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
-          >
-            Log in
-          </Link>
-          <ButtonLink href="/register" size="sm">
-            Claim your username
-          </ButtonLink>
+          {loading ? (
+            <span aria-hidden="true" className="h-8 w-24 animate-pulse rounded-md bg-sunken" />
+          ) : user ? (
+            <>
+              <Link
+                href={`/r/${user.username}`}
+                className="rounded-md px-3.5 py-2 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+              >
+                @{user.username}
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className={buttonClasses('secondary', 'sm')}
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-md px-3.5 py-2 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+              >
+                Log in
+              </Link>
+              <ButtonLink href="/register" size="sm">
+                Claim your username
+              </ButtonLink>
+            </>
+          )}
         </div>
 
         <button
@@ -96,16 +129,42 @@ export function SiteHeader() {
               </Link>
             ))}
             <div className="mt-2 flex flex-col gap-2 border-t border-line pt-4">
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className={buttonClasses('secondary', 'md')}
-              >
-                Log in
-              </Link>
-              <ButtonLink href="/register" size="md">
-                Claim your username
-              </ButtonLink>
+              {loading ? (
+                <span
+                  aria-hidden="true"
+                  className="h-11 w-full animate-pulse rounded-md bg-sunken"
+                />
+              ) : user ? (
+                <>
+                  <Link
+                    href={`/r/${user.username}`}
+                    onClick={() => setOpen(false)}
+                    className={buttonClasses('secondary', 'md')}
+                  >
+                    @{user.username}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className={buttonClasses('ghost', 'md')}
+                  >
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setOpen(false)}
+                    className={buttonClasses('secondary', 'md')}
+                  >
+                    Log in
+                  </Link>
+                  <ButtonLink href="/register" size="md">
+                    Claim your username
+                  </ButtonLink>
+                </>
+              )}
             </div>
           </div>
         </nav>

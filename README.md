@@ -34,6 +34,9 @@ into a large online city.
 | Safety    | Reports, moderation queue, roles (`resident` / `moderator` / `admin`), audit log |
 | Admin     | Dashboard, user management, announcement publishing                              |
 
+**Live today:** registration, login, logout, server-side sessions, public Citizen Cards
+at `/r/username`, a health endpoint and the landing/rules pages.
+
 **Deferred to later releases:** interactive isometric city map, radio & newspaper,
 voting & elections, groups & clubs, direct messages, notifications, organizations and
 the virtual economy.
@@ -80,15 +83,14 @@ Copy `.env.example` to `.env`. Never commit `.env` — it is gitignored.
 src/
   app/        Routes (public, auth, app, admin) and API route handlers
   components/ ui primitives, layout, feature components
-  lib/        db, env, logger, errors, shared helpers
+  server/     auth service + guards (business logic, HTTP-free)
+  lib/        db, env, logger, errors, cookies, rate-limit, validation, helpers
   fonts/      self-hosted OFL fonts with their licences
   styles/     design tokens and global styles
 prisma/       schema.prisma (SQLite), schema.postgres.prisma (production twin), seed
 scripts/      cross-platform dev/test helpers
 tests/        unit + integration suites (real database)
 ```
-
-`server/` (business logic) and `docs/` are created together with their milestones.
 
 ## Development
 
@@ -120,12 +122,18 @@ Repository hygiene is in place from the first commit:
 - `.env` is gitignored; only `.env.example` (placeholders) is tracked.
 - No credentials, tokens, private keys or generated build output are committed.
 
-Application-level controls are designed and land with their milestones (do not read them
-as shipped yet):
+Authentication controls that are live today:
 
-- **Authentication (M3):** `HttpOnly` + `Secure` + `SameSite=Lax` session cookies with
-  only hashed tokens stored, Argon2id password hashing, rate limiting and CSRF defence.
-- **Every request:** Zod-validated input and server-side authorisation checks.
+- **Passwords** hashed with Argon2id (OWASP baseline parameters).
+- **Sessions** stored server-side as SHA-256 hashes only; the raw token lives in an
+  `HttpOnly` + `Secure` + `SameSite=Lax` cookie, so a database leak yields no usable
+  sessions.
+- **Rate limiting** on register and login, backed by the database so it holds across
+  instances and restarts.
+- **Anti-enumeration:** login returns one generic failure for unknown usernames and
+  wrong passwords, and runs a constant-work hash comparison even when no user matches.
+- **Input** Zod-validated server-side; authorisation enforced in `requireAuth` /
+  `requireRole` guards, never in the UI.
 
 To report a vulnerability, please open a private security advisory rather than a public
 issue.

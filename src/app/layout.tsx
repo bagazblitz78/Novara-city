@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 import './globals.css';
 
 /* Self-hosted OFL fonts — licences ship in src/fonts/OFL-*.txt. */
@@ -56,7 +57,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${fraunces.variable} ${publicSans.variable}`}>
-      <body className="min-h-dvh">{children}</body>
+      <body className="min-h-dvh">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

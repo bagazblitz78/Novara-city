@@ -21,6 +21,14 @@ const schema = z.object({
   UPLOAD_DIR: z.string().min(1).default('./uploads'),
   UPLOAD_MAX_BYTES: z.coerce.number().int().positive().default(2_097_152),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  // Escape hatch for running a *production build* on SQLite — i.e. a local
+  // smoke test or a single-node demo. A real deployment must not set this; it
+  // exists so the PostgreSQL requirement can be met deliberately rather than
+  // by silently weakening the guard below.
+  ALLOW_SQLITE_IN_PRODUCTION: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -48,8 +56,12 @@ export function assertSecureEnv(): void {
     );
   }
 
-  if (!env.DATABASE_URL.startsWith('postgres')) {
-    throw new Error('DATABASE_URL must point at PostgreSQL in production.');
+  if (!env.DATABASE_URL.startsWith('postgres') && !env.ALLOW_SQLITE_IN_PRODUCTION) {
+    throw new Error(
+      'DATABASE_URL must point at PostgreSQL in production. ' +
+        'To run a production build on SQLite deliberately (local smoke test/demo), ' +
+        'set ALLOW_SQLITE_IN_PRODUCTION=true.',
+    );
   }
 }
 

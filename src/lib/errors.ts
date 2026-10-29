@@ -21,6 +21,12 @@ export class AppError extends Error {
   }
 }
 
+export class BadRequestError extends AppError {
+  constructor(message = 'The request could not be understood.', fields?: FieldErrors) {
+    super(message, 'BAD_REQUEST', 400, fields);
+  }
+}
+
 export class ValidationError extends AppError {
   constructor(message = 'Please check the highlighted fields.', fields?: FieldErrors) {
     super(message, 'VALIDATION_ERROR', 422, fields);
